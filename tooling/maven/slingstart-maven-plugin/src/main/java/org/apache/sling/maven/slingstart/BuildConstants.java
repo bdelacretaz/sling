@@ -31,6 +31,9 @@ public abstract class BuildConstants {
     // Model artifact name
     public static final String MODEL_ARTIFACT_NAME = "slingstart.txt";
 
+    // Model fragment bundle artifact name
+    public static final String MODEL_FRAGMENT_ARTIFACT_NAME = "modelfragment.jar";
+
     // Types
 
     public static final String TYPE_JAR = "jar";
@@ -54,6 +57,8 @@ public abstract class BuildConstants {
     public static final String CLASSIFIER_APP = "app";
 
     public static final String CLASSIFIER_WEBAPP = "webapp";
+
+    public static final String CLASSIFIER_MODEL_FRAGMENT = "modelfragment";
 
     // Manifest attributes
 

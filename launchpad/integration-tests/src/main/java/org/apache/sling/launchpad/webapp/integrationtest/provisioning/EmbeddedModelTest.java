@@ -17,47 +17,44 @@
 package org.apache.sling.launchpad.webapp.integrationtest.provisioning;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.io.InputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.sling.junit.rules.TeleporterRule;
-import org.apache.sling.launchpad.api.LaunchpadContentProvider;
+import org.apache.sling.provisioning.model.Feature;
+import org.apache.sling.provisioning.model.Model;
+import org.apache.sling.provisioning.model.runtime.provider.ProvisioningModelProvider;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-/** Verify that the provisioning model used to build this instance is available 
- *  as a Launchpad resource.
+/** Verify that the provisioning model used to build this instance is available
+ *  via the ProvisioningModelProvider service.
  */
 public class EmbeddedModelTest {
     @Rule
     public final TeleporterRule teleporter = TeleporterRule.forClass(getClass(), "Launchpad");
     
-    public static final String MODEL_RESOURCE_PATH = "/resources/provisioning/model.txt";
+    private Model model;
     
-    private String modelContent;
+    private void assertFeature(String name) {
+        final Feature f = model.getFeature(name);
+        assertNotNull("Expecting feature [" + name + "]", f);
+    }
     
     @Before
     public void setup() throws IOException {
-        final InputStream modelStream = teleporter.getService(LaunchpadContentProvider.class).getResourceAsStream(MODEL_RESOURCE_PATH);
-        assertNotNull("Expecting embedded model resource at " + MODEL_RESOURCE_PATH, modelStream);
-        try {
-            modelContent = new String(IOUtils.toByteArray(modelStream));
-        } finally {
-            modelStream.close();
-        }
+        model = teleporter.getService(ProvisioningModelProvider.class).getProvisioningModel(null);
+        assertNotNull("Expecting non-null model", model);
     }
     
     @Test
     public void testLaunchpadFeature() {
-        assertTrue(modelContent.contains("[feature name=:launchpad]"));
+        assertFeature(":launchpad");
     }
     
     @Test
     public void testBootFeature() {
-        assertTrue(modelContent.contains("[feature name=:boot]"));
+        assertFeature(":boot");
     }
 }

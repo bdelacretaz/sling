@@ -121,6 +121,12 @@
             <version>1.8.6</version>
             <scope>provided</scope>
         </dependency>
+        <!-- We use the VersionCleaner class -->
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.utils</artifactId>
+            <version>1.8.0</version>
+        </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-archiver</artifactId>

@@ -83,6 +83,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <createWebapp>true</createWebapp>
+                    <addModelFragmentAtStartLevel>2</addModelFragmentAtStartLevel>
                 </configuration>
             </plugin>
 
