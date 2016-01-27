@@ -67,4 +67,12 @@ class TestInitializer implements SlingRepositoryInitializer {
         return NODE_PATH + "/" + PROP;
     }
     
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " " + id;
+    }
+    
+    public String getId() {
+        return id;
+    }
 }

@@ -18,18 +18,20 @@
  */
 package org.apache.sling.jcr.base;
 
+import java.util.Arrays;
 import java.util.Dictionary;
 
 import javax.jcr.Repository;
 
-import org.apache.sling.commons.osgi.SortingServiceTracker;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.jcr.api.SlingRepositoryInitializer;
 import org.apache.sling.serviceusermapping.ServiceUserMapper;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceFactory;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +96,7 @@ public abstract class AbstractSlingRepositoryManager extends NamespaceMappingSup
 
     private volatile boolean disableLoginAdministrative;
     
-    private volatile SortingServiceTracker<SlingRepositoryInitializer> repoInitializerTracker;
+    private volatile ServiceTracker repoInitializerTracker;
 
     /**
      * Returns the default workspace, which may be <code>null</code> meaning to
@@ -305,9 +307,7 @@ public abstract class AbstractSlingRepositoryManager extends NamespaceMappingSup
         this.defaultWorkspace = defaultWorkspace;
         this.disableLoginAdministrative = disableLoginAdministrative;
         
-        this.repoInitializerTracker = new SortingServiceTracker<SlingRepositoryInitializer>(
-                bundleContext,
-                SlingRepositoryInitializer.class.getName());
+        this.repoInitializerTracker = new ServiceTracker(bundleContext, SlingRepositoryInitializer.class.getName(), null);
         this.repoInitializerTracker.open();
 
         try {
@@ -356,9 +356,19 @@ public abstract class AbstractSlingRepositoryManager extends NamespaceMappingSup
     }
     
     private void executeRepositoryInitializers(SlingRepository repo) throws Exception {
-        for(SlingRepositoryInitializer sri : repoInitializerTracker.getSortedServices()) {
+        final ServiceReference [] refs = repoInitializerTracker.getServiceReferences();
+        if(refs == null || refs.length == 0) {
+            log.debug("No SlingRepositoryInitializer services found");
+        }
+        Arrays.sort(refs);
+        for(ServiceReference ref : refs) {
+            final SlingRepositoryInitializer sri = (SlingRepositoryInitializer)bundleContext.getService(ref);
             log.debug("Executing {}", sri);
-            sri.processRepository(repo);
+            try {
+                sri.processRepository(repo);
+            } finally {
+                bundleContext.ungetService(ref);
+            }
         }
     }
 
