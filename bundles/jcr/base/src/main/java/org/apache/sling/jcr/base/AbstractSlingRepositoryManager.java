@@ -333,7 +333,7 @@ public abstract class AbstractSlingRepositoryManager extends NamespaceMappingSup
                     t = e;
                 }
                 if(t != null) {
-                    log.error("Exception CompositeSlingRepositoryInitializer, SlingRepository service registration aborted", t);
+                    log.error("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", t);
                     return false;
                 }
                 
