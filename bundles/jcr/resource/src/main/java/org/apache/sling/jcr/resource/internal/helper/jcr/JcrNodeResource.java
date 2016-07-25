@@ -21,7 +21,10 @@ import static org.apache.jackrabbit.JcrConstants.JCR_DATA;
 import static org.apache.jackrabbit.JcrConstants.NT_FILE;
 import static org.apache.jackrabbit.JcrConstants.NT_LINKEDFILE;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.AccessControlException;
 import java.util.Iterator;
 import java.util.Map;
@@ -70,6 +73,18 @@ class JcrNodeResource extends JcrItemResource<Node> { // this should be package 
 
     private final HelperData helper;
 
+    /** EXPERIMENTAL: if this property is set on a jcr:content node (which requires adding a 
+     *  mixin if that's an nt:resource node), this class uses an alternate binary provider
+     *  instead of getting the binary data from the current JCR Node. The idea is to use
+     *  external binary stores and store only the metadata in JCR. 
+     *  
+     *  Here's an example CND definition for this mixin:
+     *  [sling:binaryProviderMixin]
+     *       mixin
+     *      - sling:binaryProvider (string)
+     */
+    private static final String PROP_BINARY_PROVIDER = "sling:binaryProvider";
+    
     /**
      * Constructor
      * @param resourceResolver
@@ -192,6 +207,28 @@ class JcrNodeResource extends JcrItemResource<Node> { // this should be package 
         return getItem();
     }
 
+    /** Experimental external binaries - get an InputStream by combining the
+     *  supplied provider name with the supplied path.
+     */
+    private InputStream getInputStreamFromProvider(String provider, String path) {
+        // TODO simplistic proof of concept for now - if we go this route
+        // we'll define a provider interface
+        if(!"test".equals(provider)) {
+            LOGGER.warn("Invalid provider name {}", provider);
+        }
+        URL url = null;
+        try {
+            final String prefix = "http://localhost:1234/media";
+            url = new URL(prefix + path.replaceAll(":", "_"));
+            LOGGER.debug("Retrieving binary via {}", url);
+            final URLConnection c = url.openConnection();
+            return c.getInputStream();
+        } catch (IOException e) {
+            LOGGER.warn("Failed to retrieve binary via [{}]", url);
+            throw new RuntimeException("Failed to retrieve binary via Sling provider, see the logs for more info");
+        }
+    }
+    
     /**
      * Returns a stream to the <em>jcr:data</em> property if the
      * {@link #getNode() node} is an <em>nt:file</em> or <em>nt:resource</em>
@@ -208,6 +245,11 @@ class JcrNodeResource extends JcrItemResource<Node> { // this should be package 
                         ? node.getNode(JCR_CONTENT)
                         : node.isNodeType(NT_LINKEDFILE) ? node.getProperty(JCR_CONTENT).getNode() : node;
 
+                if(content.hasProperty(PROP_BINARY_PROVIDER)) {
+                    final String provider = content.getProperty(PROP_BINARY_PROVIDER).getString();
+                    return getInputStreamFromProvider(provider, content.getPath());
+                }
+                
                 Property data;
 
                 // if the node has a jcr:data property, use that property
